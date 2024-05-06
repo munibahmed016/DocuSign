@@ -16,8 +16,18 @@ app.use(session({
     saveUninitialized: true,
 }));
 
-app.post("/form", (req, res) =>{
-    console.log("recived from data ", req.body);
+app.post("/form", async(req, res) =>{
+
+    await checkToken();
+        let envelopesApi = new getEnvelopesApi(req);
+      
+        let envelope = makeEnvelope(req.body.name, req.body.email);
+      
+        let results = await envelopesApi.createEnvelope(args.accountId, {
+          envelopeDefinition: envelope,
+        });
+      console.log("envelope results", results);
+    // console.log("recived from data ", req.body);
     res.send("recived");
 });
 
@@ -27,6 +37,30 @@ dsApiClient.setBasePath(process.env.BASE_PATH);
 dsApiClient.addDefaultHeader('Authorization', 'Bearer ' + req.session.access_token);
 return new docusign.EnvelopesApi(dsApiClient);
 }
+
+function makeEnvelope(name, email) {
+      let env = new docusign.EnvelopeDefinition();
+    env.templateId = process.env.TEMPLATE_ID;
+
+    let signer1 = docusign.TemplateRole.constructFromObject({
+      email: email,
+      name: name,
+      roleName: 'Applicant',
+    });
+  
+    // // Create a cc template role.
+    // // We're setting the parameters via setters
+    // let cc1 = new docusign.TemplateRole();
+    // cc1.email = args.ccEmail;
+    // cc1.name = args.ccName;
+    // cc1.roleName = 'cc';
+  
+    // Add the TemplateRole objects to the envelope object
+    env.templateRoles = [signer1];
+    env.status = 'sent';
+  
+    return env;
+  }
 
 async function checkToken (req){
     if (req.session.access_token && Date.now() < req.session.expires_at){
