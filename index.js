@@ -21,6 +21,13 @@ app.post("/form", (req, res) =>{
     res.send("recived");
 });
 
+function getEnvelopesApi (req){
+let dsApiClient = new docusign.ApiClient();
+dsApiClient.setBasePath(process.env.BASE_PATH);
+dsApiClient.addDefaultHeader('Authorization', 'Bearer ' + req.session.access_token);
+return new docusign.EnvelopesApi(dsApiClient);
+}
+
 async function checkToken (req){
     if (req.session.access_token && Date.now() < req.session.expires_at){
         console.log("re-using access_token", req.session.access_token);
