@@ -20,10 +20,8 @@ app.post("/form", async(req, res) =>{
 
     await checkToken();
         let envelopesApi = new getEnvelopesApi(req);
-      
         let envelope = makeEnvelope(req.body.name, req.body.email);
-      
-        let results = await envelopesApi.createEnvelope(args.accountId, {
+        let results = await envelopesApi.createEnvelope(process.env.ACCOUNT_ID, {
           envelopeDefinition: envelope,
         });
       console.log("envelope results", results);
