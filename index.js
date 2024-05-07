@@ -39,6 +39,10 @@ dsApiClient.addDefaultHeader('Authorization', 'Bearer ' + req.session.access_tok
 return new docusign.EnvelopesApi(dsApiClient);
 }
 
+function createTabs(){
+
+};
+
 function makeEnvelope(name, email) {
       let env = new docusign.EnvelopeDefinition();
     env.templateId = process.env.TEMPLATE_ID;
