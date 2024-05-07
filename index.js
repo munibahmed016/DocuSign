@@ -18,15 +18,18 @@ app.use(session({
 
 app.post("/form", async(req, res) =>{
 
-    await checkToken();
+    await checkToken(req);
         let envelopesApi = new getEnvelopesApi(req);
         let envelope = makeEnvelope(req.body.name, req.body.email);
         let results = await envelopesApi.createEnvelope(process.env.ACCOUNT_ID, {
           envelopeDefinition: envelope,
         });
       console.log("envelope results", results);
-    // console.log("recived from data ", req.body);
-    res.send("recived");
+      let viewRequest = makeRecipientViewRequest(req.body.name, req.body.email);
+results = await envelopesApi.createRecipientView(process.env.ACCOUNT_ID, results.envelopeId, {
+  recipientViewRequest: viewRequest,
+});
+res.redirect(results.url);
 });
 
 function getEnvelopesApi (req){
@@ -43,6 +46,7 @@ function makeEnvelope(name, email) {
     let signer1 = docusign.TemplateRole.constructFromObject({
       email: email,
       name: name,
+      clientUserId: process.env.CLIENT_USER_ID ,
       roleName: 'Applicant',
     });
   
@@ -59,6 +63,22 @@ function makeEnvelope(name, email) {
   
     return env;
   }
+
+  function makeRecipientViewRequest(name, email) {
+
+  
+    let viewRequest = new docusign.RecipientViewRequest();
+    viewRequest.returnUrl = "http://localhost:8000/success";
+ 
+    viewRequest.authenticationMethod = 'none';
+  
+    viewRequest.email = email;
+    viewRequest.userName = name;
+    viewRequest.clientUserId = process.env.CLIENT_USER_ID;
+
+    return viewRequest;
+  }
+  
 
 async function checkToken (req){
     if (req.session.access_token && Date.now() < req.session.expires_at){
@@ -84,6 +104,10 @@ app.get("/", async (req, res)=>{
    await checkToken (req);
     res.sendFile(path.join (__dirname, "main.html"));
 });
+
+app.get("/success", (req, res) =>{
+    res.send("success");
+})
 
 app.listen(PORT = 8000, ()=>{
     console.log("Server is working", process.env.USER_ID);
