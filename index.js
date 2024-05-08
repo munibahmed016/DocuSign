@@ -8,7 +8,7 @@ const session = require("express-session");
 
 dotenv.config();
 
-const app =express();
+const app = express();
 app.use (bodyParser.urlencoded({extended:true}));
 app.use(session({
     secret: "fsfs78943dsdsa",
@@ -20,7 +20,7 @@ app.post("/form", async(req, res) =>{
 
     await checkToken(req);
         let envelopesApi = new getEnvelopesApi(req);
-        let envelope = makeEnvelope(req.body.name, req.body.email);
+        let envelope = makeEnvelope(req.body.name, req.body.email, req.body.company);
         let results = await envelopesApi.createEnvelope(process.env.ACCOUNT_ID, {
           envelopeDefinition: envelope,
         });
@@ -39,112 +39,33 @@ dsApiClient.addDefaultHeader('Authorization', 'Bearer ' + req.session.access_tok
 return new docusign.EnvelopesApi(dsApiClient);
 }
 
-function createTabs(){
-    let list1 = docusign.List.constructFromObject({
-        value: 'green',
-        documentId: '1',
-        pageNumber: '1',
-        tabLabel: 'list',
-      });
-      
-      // Checkboxes
-      let check1 = docusign.Checkbox.constructFromObject({
-          tabLabel: 'ckAuthorization',
-          selected: 'true',
-        });
-        let check3 = docusign.Checkbox.constructFromObject({
-          tabLabel: 'ckAgreement',
-          selected: 'true',
-        });
-      // The NOde.js SDK has a bug so it cannot create a Number tab at this time.
-      // number1 = docusign.Number.constructFromObject({
-      //    tabLabel: "numbersOnly", value: '54321'});
-      let radioGroup = docusign.RadioGroup.constructFromObject({
-        groupName: 'radio1',
-        // You only need to provide the radio entry for the entry you're selecting
-        radios: [
-          docusign.Radio.constructFromObject({ value: 'white', selected: 'true' }),
-        ],
-      });
-     
-      
-      // We can also add a new tab (field) to the ones already in the template:
-      let textExtra = docusign.Text.constructFromObject({
-        document_id: '1',
-        page_number: '1',
-        x_position: '280',
-        y_position: '172',
-        font: 'helvetica',
-        font_size: 'size14',
-        tab_label: 'added text field',
-        height: '23',
-        width: '84',
-        required: 'false',
-        bold: 'true',
-        value: args.signerName,
-        locked: 'false',
-        tab_id: 'name',
-      });
+function makeEnvelope(name, email, company) {
+      let env = new docusign.EnvelopeDefinition();
+    env.templateId = process.env.TEMPLATE_ID;
 
-      let text = docusign.Text.constructFromObject({
+    let text = docusign.Text.constructFromObject({
         tabLabel: 'Company_Name',
-        value: 'Jabberwocky!',
+        value: company,
       });
       
       // Pull together the existing and new tabs in a Tabs object:
       let tabs = docusign.Tabs.constructFromObject({
         textTabs: [text],
       });
-      // Create the template role elements to connect the signer and cc recipients
-      // to the template
-      let signer = docusign.TemplateRole.constructFromObject({
-        email: args.signerEmail,
-        name: args.signerName,
-        roleName: 'signer',
-        clientUserId: args.signerClientId, // change the signer to be embedded
-        tabs: tabs, // Set tab values
-      });
-      // Create a cc template role.
-      let cc = docusign.TemplateRole.constructFromObject({
-        email: args.ccEmail,
-        name: args.ccName,
-        roleName: 'cc',
-      });
-      // Add the TemplateRole objects to the envelope object
-      envelopeDefinition.templateRoles = [signer, cc];
-      // Create an envelope custom field to save the our application's
-      // data about the envelope
-      let customField = docusign.TextCustomField.constructFromObject({
-          name: 'app metadata item',
-          required: 'false',
-          show: 'true', // Yes, include in the CoC
-          value: '1234567',
-        });
-        let customFields = docusign.CustomFields.constructFromObject({
-          textCustomFields: [customField],
-        });
-      envelopeDefinition.customFields = customFields;
-      
-      return envelopeDefinition;
-      
-};
-
-function makeEnvelope(name, email) {
-      let env = new docusign.EnvelopeDefinition();
-    env.templateId = process.env.TEMPLATE_ID;
 
     let signer1 = docusign.TemplateRole.constructFromObject({
       email: email,
       name: name,
       clientUserId: process.env.CLIENT_USER_ID ,
       roleName: 'Applicant',
+      tabs: tabs,
     });
   
     // // Create a cc template role.
     // // We're setting the parameters via setters
     // let cc1 = new docusign.TemplateRole();
-    // cc1.email = args.ccEmail;
-    // cc1.name = args.ccName;
+    // cc1.email = email;
+    // cc1.name = name;
     // cc1.roleName = 'cc';
   
     // Add the TemplateRole objects to the envelope object
